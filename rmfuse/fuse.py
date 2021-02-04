@@ -7,6 +7,7 @@ import errno
 import io
 import logging
 import os
+import pkg_resources
 import stat
 
 import bidict
@@ -19,6 +20,7 @@ from rmcl.exceptions import ApiError, VirtualItemError
 from rmcl.utils import now
 
 log = logging.getLogger(__name__)
+VERSION = pkg_resources.get_distribution('rmfuse').version
 
 class FSMode(enum.Enum):
     meta = 'meta'
@@ -363,6 +365,7 @@ def parse_args():
                         help="Enable verbose output (-vv for even more verbosity)")
     parser.add_argument('-m', '--mode', type=FSMode, choices=list(FSMode),
                         default=FSMode.annot, help="Type of files to mount")
+    parser.add_argument('--version', action='version', version=VERSION)
     return parser.parse_args()
 
 def main():
