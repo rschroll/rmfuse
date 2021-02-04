@@ -277,7 +277,7 @@ class RmApiFS(pyfuse3.Operations):
         try:
             await document.upload(io.BytesIO(data), type_)
         except ApiError as error:
-            log.error('API Error:', error)
+            log.error(f'API Error: {error}')
             raise pyfuse3.FUSEError(errno.EREMOTEIO)  # Unfortunately, this will be ignored
         finally:
             del self.buffers[fh]
