@@ -365,7 +365,8 @@ def parse_args():
                         default=FSMode.annot, help="Type of files to mount")
     return parser.parse_args()
 
-def main(options):
+def main():
+    options = parse_args()
     fs = RmApiFS(options.mode)
     fuse_options = set(pyfuse3.default_options)
     fuse_options.add('fsname=rmapi')
@@ -382,4 +383,4 @@ def main(options):
         pyfuse3.close()
 
 if __name__ == '__main__':
-    main(parse_args())
+    main()
