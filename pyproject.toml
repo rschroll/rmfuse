@@ -3,6 +3,9 @@ name = "rmfuse"
 version = "0.1.0"
 description = ""
 authors = ["Robert Schroll <rschroll@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/rschroll/rmfuse"
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.7"
