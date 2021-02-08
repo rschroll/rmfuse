@@ -76,6 +76,9 @@ class ModeFile():
     async def size(self):
         return await self.raw_size()
 
+    async def type(self):
+        return 'mode'
+
     async def update_metadata(self):
         raise VirtualItemError('Cannot update .mode file')
 
@@ -93,6 +96,15 @@ class ModeFile():
         except KeyError:
             raise pyfuse3.FUSEError(errno.EINVAL)  # Invalid argument
         return len(buf)
+
+    async def upload(self, new_contents, type_):
+        raise VirtualItemError('Cannot upload .mode file')
+
+    async def annotated(self, **kw):
+        return await self.raw()
+
+    async def annotated_size(self):
+        return await self.raw_size()
 
 
 class RmApiFS(pyfuse3.Operations):
