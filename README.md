@@ -17,6 +17,17 @@ untested.  Installation of RMfuse and its dependencies will likely
 require the FUSE3 headers and a C build system (`libfuse3-dev` and
 `build-essential` in Debian).
 
+### Fedora Specific Instructions
+Fedora 33 requires the python3-devel, fuse3-libs, fuse3-devel, python3-fusepy. The following command will do:
+```
+sudo dnf install python3-devel fuse3-libs fuse3-devel python3-fusepy
+```
+
+Also be sure to add the ~/.local/bin directory to your path. After that a normal pip install will work.
+
+
+
+
 RMfuse can be installed with pip:
 ```
 pip install rmfuse
