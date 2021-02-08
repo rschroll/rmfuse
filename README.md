@@ -9,8 +9,8 @@ using the same tools you use on your local system.
 ## Installation
 
 RMfuse requires Python 3.7 or later.  It also requires the FUSE3 library.
-This should be available in most Linuxes (`libfuse3-3` in Debian-based
-distributions) and BSDs.  RMfuse may work with
+This should be available in most Linuxes (`fuse3` and `libfuse3-3` in
+Debian-based distributions) and BSDs.  RMfuse may work with
 [macFuse](https://osxfuse.github.io/), but that is untested.  Windows
 users may try [WinFuse](https://github.com/billziss-gh/winfuse), also
 untested.  Installation of RMfuse and its dependencies will likely
@@ -131,6 +131,10 @@ is first read.  This can confuse some tools which use the file size to
 determine how much to read.  After reading the file once, the file size
 will be correctly reported going forward; rerunning these tools a second
 time is usually enough to get them working.
+
+- To try to address this, RMfuse throws an error when a program tries to
+read past the end of a file.  This can cause "No data available" errors
+to be reported.  These are harmless.
 
 - RMfuse sometimes fails to authenticate with the reMarkable Cloud
 servers when starting up.  Several failures are possible before success
