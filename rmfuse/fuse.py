@@ -394,6 +394,8 @@ def main():
     pyfuse3.init(fs, options.mountpoint, fuse_options)
     try:
         trio.run(pyfuse3.main)
+    except KeyboardInterrupt:
+        log.debug('Exiting due to KeyboardInterrupt')
     finally:
         pyfuse3.close()
 
