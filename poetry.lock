@@ -384,7 +384,7 @@ pillow = ">=4.0.0"
 
 [[package]]
 name = "rmcl"
-version = "0.3.0"
+version = "0.3.1"
 description = "reMarkable Cloud Library"
 category = "main"
 optional = false
@@ -846,8 +846,8 @@ reportlab = [
     {file = "reportlab-3.5.59.tar.gz", hash = "sha256:a755cca2dcf023130b03bb671670301a992157d5c3151d838c0b68ef89894536"},
 ]
 rmcl = [
-    {file = "rmcl-0.3.0-py3-none-any.whl", hash = "sha256:cc9cfbfd904164bada7d6680695b54defd066c31a36935410a53c53351d0e6aa"},
-    {file = "rmcl-0.3.0.tar.gz", hash = "sha256:df5c38176309cb119c29bf9bca9d8f2f6427280241a882106b939db17ef48f3d"},
+    {file = "rmcl-0.3.1-py3-none-any.whl", hash = "sha256:e4ebcc3e6ce7e9efb1dec4a2d0a44c463ef3854d44e1f8919c65a2b3f9312ec7"},
+    {file = "rmcl-0.3.1.tar.gz", hash = "sha256:5b5316adf53cca9e56273cad220cb7374cd56e7bac962c943868b05fc090e98c"},
 ]
 rmrl = [
     {file = "rmrl-0.1.2-py3-none-any.whl", hash = "sha256:173231c7122a11201232ed8fe74e4a9a65192b87886ef8a98ae912aa9b875c26"},

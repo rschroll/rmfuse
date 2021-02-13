@@ -136,11 +136,6 @@ time is usually enough to get them working.
 read past the end of a file.  This can cause "No data available" errors
 to be reported.  These are harmless.
 
-- RMfuse sometimes fails to authenticate with the reMarkable Cloud
-servers when starting up.  Several failures are possible before success
-is achieved.  It is currently unknown what triggers this problem.  RMfuse
-does not handle this gracefully at present.
-
 - Adding a file other than an EPUB or PDF silently fails.  RMfuse does
 throw an error when it has been given an invalid file, but this comes
 too late for FUSE to pass the error back to the caller.  RMfuse may be
