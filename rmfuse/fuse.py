@@ -11,13 +11,14 @@ import pkg_resources
 import stat
 
 import bidict
-import pyfuse3
 import trio
 
 from rmcl import Document, Folder, Item, invalidate_cache
 from rmcl.const import ROOT_ID, FileType
 from rmcl.exceptions import ApiError, VirtualItemError
 from rmcl.utils import now
+
+from .fuselib import async_op, fuse, is_pyfuse3
 
 log = logging.getLogger(__name__)
 VERSION = pkg_resources.get_distribution('rmfuse').version
@@ -94,7 +95,7 @@ class ModeFile():
         try:
             self._fs.mode = FSMode[command]
         except KeyError:
-            raise pyfuse3.FUSEError(errno.EINVAL)  # Invalid argument
+            raise fuse.FUSEError(errno.EINVAL)  # Invalid argument
         return len(buf)
 
     async def upload(self, new_contents, type_):
@@ -107,11 +108,11 @@ class ModeFile():
         return await self.raw_size()
 
 
-class RmApiFS(pyfuse3.Operations):
+class RmApiFS(fuse.Operations):
 
     def __init__(self, mode):
         super().__init__()
-        self._next_inode = pyfuse3.ROOT_INODE
+        self._next_inode = fuse.ROOT_INODE
         self.inode_map = bidict.bidict()
         self.inode_map[self.next_inode()] = ''
         self.mode = mode
@@ -165,25 +166,26 @@ class RmApiFS(pyfuse3.Operations):
                 return c
         return None
 
+    @async_op
     async def lookup(self, p_inode, name, ctx=None):
         if name == b'.':
             inode = p_inode
         elif name == b'..':
             folder = await self.get_by_id(self.get_id(p_inode))
             if folder.parent is None:
-                raise pyfuse3.FUSEError(errno.ENOENT)
+                raise fuse.FUSEError(errno.ENOENT)
             inode = self.get_inode(folder.parent)
         else:
             item = await self.get_by_name(p_inode, name)
             if item:
                 inode = self.get_inode(item.id)
             else:
-                raise pyfuse3.FUSEError(errno.ENOENT)
+                raise fuse.FUSEError(errno.ENOENT)
 
-        return await self.getattr(inode, ctx)
+        return await self._getattr(inode, ctx)
 
-    async def getattr(self, inode, ctx=None):
-        entry = pyfuse3.EntryAttributes()
+    async def _getattr(self, inode, ctx=None):
+        entry = fuse.EntryAttributes()
 
         if inode in self.buffers:
             entry.st_mode = (stat.S_IFREG | 0o644)
@@ -219,13 +221,39 @@ class RmApiFS(pyfuse3.Operations):
 
         return entry
 
+    @async_op
+    async def getattr(self, inode, ctx=None):
+        return await self._getattr(inode, ctx)
+
+    @async_op
+    async def setattr(self, inode, attr, fields, fh, ctx):
+        # llfuse calls this to truncate a file before writing to it.  We'll
+        # just accept the call, but not do anything.
+        log.debug(f'setattr called on {await self.get_by_id(self.get_id(inode))!r}')
+        if fields.update_atime:
+            log.debug(f'  Attempting to set atime to {attr.st_atime_ns}')
+        if fields.update_mtime:
+            log.debug(f'  Attempting to set mtime to {attr.st_mtime_ns}')
+        if fields.update_mode:
+            log.debug(f'  Attempting to set mode to {attr.st_mode}')
+        if fields.update_uid:
+            log.debug(f'  Attempting to set uid to {attr.st_uid}')
+        if fields.update_gid:
+            log.debug(f'  Attempting to set gid to {attr.st_gid}')
+        if fields.update_size:
+            log.debug(f'  Attempting to set size to {attr.st_size}')
+        log.debug('  No changes made')
+        return await self._getattr(inode, ctx)
+
+    @async_op
     async def readlink(self, inode, ctx):
         return NotImplemented
 
+    @async_op
     async def opendir(self, inode, ctx):
         return inode
 
-    async def readdir(self, inode, start_id, token):
+    async def _readdir_entries(self, inode):
         item = await self.get_by_id(self.get_id(inode))
         direntries = [item]
         if item.parent is not None:
@@ -233,19 +261,35 @@ class RmApiFS(pyfuse3.Operations):
         if item.name == '':
             direntries.append(self.mode_file)
         direntries.extend(item.children)
-        for i, c in enumerate(direntries[start_id:]):
-            pyfuse3.readdir_reply(token, await self.filename(c, item),
-                                  await self.getattr(self.get_inode(c.id)),
-                                  start_id + i + 1)
+        return item, direntries
 
+    if is_pyfuse3:
+        async def readdir(self, inode, start_id, token):
+            item, direntries = await self._readdir_entries(inode)
+            for i, c in enumerate(direntries[start_id:]):
+                fuse.readdir_reply(token, await self.filename(c, item),
+                                   await self._getattr(self.get_inode(c.id)),
+                                   start_id + i + 1)
+
+    else:
+        def readdir(self, inode, start_id):
+            item, direntries = trio.run(self._readdir_entries, inode)
+            for i, c in enumerate(direntries[start_id:]):
+                name = trio.run(self.filename, c, item)
+                attrs = trio.run(self._getattr, self.get_inode(c.id))
+                yield name, attrs, start_id + i + 1
+
+    @async_op
     async def open(self, inode, flags, ctx):
         if inode not in self.inode_map:
-            raise pyfuse3.FUSEError(errno.ENOENT)
+            raise fuse.FUSEError(errno.ENOENT)
         if (flags & os.O_RDWR or flags & os.O_WRONLY) and self.get_id(inode) != self.mode_file.id:
-            raise pyfuse3.FUSEError(errno.EPERM)
-        return pyfuse3.FileInfo(fh=inode, direct_io=True)  # direct_io means our size doesn't have to be correct
+            raise fuse.FUSEError(errno.EPERM)
+        return fuse.FileInfo(fh=inode, direct_io=True)  # direct_io means our size doesn't have to be correct
 
+    @async_op
     async def read(self, fh, start, size):
+        log.debug(f'Reading from {fh} at {start}, length {size}')
         item = await self.get_by_id(self.get_id(fh))
         if self.mode == FSMode.meta:
             contents = io.BytesIO(f'{item._metadata!r}\n'.encode('utf-8'))
@@ -262,9 +306,10 @@ class RmApiFS(pyfuse3.Operations):
         # try to read past the end of the file, despite consistently getting
         # no data.  Throwing an error alerts them to the problem.
         if not retval:
-            raise pyfuse3.FUSEError(errno.ENODATA)
+            raise fuse.FUSEError(errno.ENODATA)
         return retval
 
+    @async_op
     async def write(self, fh, offset, buf):
         if self.get_id(fh) == self.mode_file.id:
             return await self.mode_file.write(offset, buf)
@@ -274,8 +319,9 @@ class RmApiFS(pyfuse3.Operations):
             self.buffers[fh] = (document, data[:offset] + buf + data[offset + len(buf):])
             return len(buf)
 
-        raise pyfuse3.FUSEError(errno.EPERM)
+        raise fuse.FUSEError(errno.EPERM)
 
+    @async_op
     async def release(self, fh):
         if fh not in self.buffers:
             return
@@ -287,23 +333,24 @@ class RmApiFS(pyfuse3.Operations):
             type_ = FileType.epub
         else:
             log.error('Error: Not a PDF or EPUB file')
-            raise pyfuse3.FUSEError(errno.EIO)  # Unfortunately, this will be ignored
+            raise fuse.FUSEError(errno.EIO)  # Unfortunately, this will be ignored
         try:
             await document.upload(io.BytesIO(data), type_)
         except ApiError as error:
             log.error(f'API Error: {error}')
-            raise pyfuse3.FUSEError(errno.EREMOTEIO)  # Unfortunately, this will be ignored
+            raise fuse.FUSEError(errno.EREMOTEIO)  # Unfortunately, this will be ignored
         finally:
             del self.buffers[fh]
 
+    @async_op
     async def rename(self, p_inode_old, name_old, p_inode_new, name_new, flags, ctx):
         item = await self.get_by_name(p_inode_old, name_old)
         if item is None:
-            raise pyfuse3.FUSEError(errno.ENOENT)
+            raise fuse.FUSEError(errno.ENOENT)
 
         basename = name_new.rsplit(b'.', 1)[0]
         if p_inode_old != p_inode_new and await self.get_by_name(p_inode_new, name_new):
-            raise pyfuse3.FUSEError(errno.EEXIST)
+            raise fuse.FUSEError(errno.EEXIST)
 
         parent_new = await self.get_by_id(self.get_id(p_inode_new))
         try:
@@ -311,64 +358,68 @@ class RmApiFS(pyfuse3.Operations):
             item.name = basename.decode('utf-8')
             await item.update_metadata()
         except ApiError:
-            raise pyfuse3.FUSEError(errno.EREMOTEIO)
+            raise fuse.FUSEError(errno.EREMOTEIO)
         except (VirtualItemError, AttributeError):  # AttributeError from .mode file
-            raise pyfuse3.FUSEError(errno.EPERM)
+            raise fuse.FUSEError(errno.EPERM)
 
+    @async_op
     async def unlink(self, p_inode, name, ctx):
         item = await self.get_by_name(p_inode, name)
         if item is None:
-            raise pyfuse3.FUSEError(errno.ENOENT)
+            raise fuse.FUSEError(errno.ENOENT)
         if isinstance(item, Folder):
-            raise pyfuse3.FUSEError(errno.EISDIR)
+            raise fuse.FUSEError(errno.EISDIR)
         try:
             await item.delete()
         except ApiError:
-            raise pyfuse3.FUSEError(errno.EREMOTEIO)
+            raise fuse.FUSEError(errno.EREMOTEIO)
         except VirtualItemError:
-            raise pyfuse3.FUSEError(errno.EPERM)
+            raise fuse.FUSEError(errno.EPERM)
 
+    @async_op
     async def rmdir(self, p_inode, name, ctx):
         item = await self.get_by_name(p_inode, name)
         if item is None:
-            raise pyfuse3.FUSEError(errno.ENOENT)
+            raise fuse.FUSEError(errno.ENOENT)
         if not isinstance(item, Folder):
-            raise pyfuse3.FUSEError(errno.ENOTDIR)
+            raise fuse.FUSEError(errno.ENOTDIR)
         if item.children:
-            raise pyfuse3.FUSEError(errno.ENOTEMPTY)
+            raise fuse.FUSEError(errno.ENOTEMPTY)
         try:
             await item.delete()
         except ApiError:
-            raise pyfuse3.FUSEError(errno.EREMOTEIO)
+            raise fuse.FUSEError(errno.EREMOTEIO)
         except VirtualItemError:
-            raise pyfuse3.FUSEError(errno.EPERM)
+            raise fuse.FUSEError(errno.EPERM)
 
+    @async_op
     async def create(self, p_inode, name, mode, flags, ctx):
         existing = await self.get_by_name(p_inode, name)
         if existing:
-            raise pyfuse3.FUSEError(errno.EEXIST)
+            raise fuse.FUSEError(errno.EEXIST)
         parent = self.get_id(p_inode)
         basename = name.decode('utf-8').rsplit('.', 1)[0]
         document = Document.new(basename, parent)
         inode = self.get_inode(document.id)
         self.buffers[inode] = (document, b'')
-        return (pyfuse3.FileInfo(fh=inode, direct_io=True), await self.getattr(inode, ctx))
+        return (fuse.FileInfo(fh=inode, direct_io=True), await self._getattr(inode, ctx))
 
+    @async_op
     async def mkdir(self, p_inode, name, mode, ctx):
         existing = await self.get_by_name(p_inode, name)
         if existing:
-            raise pyfuse3.FUSEError(errno.EEXIST)
+            raise fuse.FUSEError(errno.EEXIST)
         parent = self.get_id(p_inode)
         folder = Folder.new(name.decode('utf-8'), parent)
         try:
             await folder.upload()
         except ApiError:
-            raise pyfuse3.FUSEError(errno.EREMOTEIO)
+            raise fuse.FUSEError(errno.EREMOTEIO)
         except VirtualItemError:
-            raise pyfuse3.FUSEError(errno.EPERM)
+            raise fuse.FUSEError(errno.EPERM)
 
         inode = self.get_inode(folder.id)
-        return await self.getattr(inode)
+        return await self._getattr(inode)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -383,21 +434,26 @@ def parse_args():
 def main():
     options = parse_args()
     fs = RmApiFS(options.mode)
-    fuse_options = set(pyfuse3.default_options)
+    fuse_options = set(fuse.default_options)
     fuse_options.add('fsname=rmapi')
+    # From llfuse; causes problems with fuse3
+    fuse_options.discard('nonempty')
     if options.verbose == 1:
         logging.basicConfig(level=logging.DEBUG)
     elif options.verbose > 1:
         logging.basicConfig(level=logging.INFO)
         # Fuse debug is really verbose, so stick that here.
         fuse_options.add('debug')
-    pyfuse3.init(fs, options.mountpoint, fuse_options)
+    fuse.init(fs, options.mountpoint, fuse_options)
     try:
-        trio.run(pyfuse3.main)
+        if is_pyfuse3:
+            trio.run(fuse.main)
+        else:
+            fuse.main(workers=1)
     except KeyboardInterrupt:
         log.debug('Exiting due to KeyboardInterrupt')
     finally:
-        pyfuse3.close()
+        fuse.close()
 
 if __name__ == '__main__':
     main()
