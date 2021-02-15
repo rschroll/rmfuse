@@ -118,6 +118,7 @@ class RmApiFS(pyfuse3.Operations):
         self.mode_file = ModeFile(self)
         self.inode_map[self.next_inode()] = self.mode_file.id
         self.buffers = dict()
+        self._prev_read_fail_count = 0
 
     def next_inode(self):
         value = self._next_inode
@@ -246,6 +247,7 @@ class RmApiFS(pyfuse3.Operations):
         return pyfuse3.FileInfo(fh=inode, direct_io=True)  # direct_io means our size doesn't have to be correct
 
     async def read(self, fh, start, size):
+        log.debug(f'Reading from {fh} at {start}, length {size}')
         item = await self.get_by_id(self.get_id(fh))
         if self.mode == FSMode.meta:
             contents = io.BytesIO(f'{item._metadata!r}\n'.encode('utf-8'))
@@ -262,7 +264,12 @@ class RmApiFS(pyfuse3.Operations):
         # try to read past the end of the file, despite consistently getting
         # no data.  Throwing an error alerts them to the problem.
         if not retval:
-            raise pyfuse3.FUSEError(errno.ENODATA)
+            log.debug(f'  No data available; {self._prev_read_fail_count} previous failures')
+            self._prev_read_fail_count += 1
+            if self._prev_read_fail_count > 1:
+                raise pyfuse3.FUSEError(errno.ENODATA)
+        else:
+            self._prev_read_fail_count = 0
         return retval
 
     async def write(self, fh, offset, buf):
