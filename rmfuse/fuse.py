@@ -398,6 +398,14 @@ def main():
         logging.basicConfig(level=logging.INFO)
         # Fuse debug is really verbose, so stick that here.
         fuse_options.add('debug')
+    
+    if not os.path.isdir(options.mountpoint):
+        log.error(f'{options.mountpoint} directory does not exist')
+        return
+    elif os.path.ismount(options.mountpoint):
+        log.error(f'{options.mountpoint} is a mount point already')
+        return
+    
     pyfuse3.init(fs, options.mountpoint, fuse_options)
     try:
         trio.run(pyfuse3.main)
@@ -405,6 +413,6 @@ def main():
         log.debug('Exiting due to KeyboardInterrupt')
     finally:
         pyfuse3.close()
-
+        
 if __name__ == '__main__':
     main()
