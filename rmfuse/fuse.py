@@ -413,6 +413,5 @@ def main():
         log.debug('Exiting due to KeyboardInterrupt')
     finally:
         pyfuse3.close()
-        
 if __name__ == '__main__':
     main()
