@@ -423,20 +423,20 @@ class RmApiFS(fuse.Operations):
 
     @async_op
     async def statfs(self, ctx):
-        stat = fuse.StatvfsData()
+        stats = fuse.StatvfsData()
         # Block size, suggests optimal read sizes.  Presumably, we want this
         # large, but I don't know what the limits are.  This is what my root
         # filesystem has.  SSHFS also uses 4096, but sets to 0 on Apple.
         # See https://github.com/libfuse/sshfs/commit/db149d1d874ccf044f3ed8d8f980452506b8fb4b
-        stat.f_bsize = stat.f_frsize = 4096
+        stats.f_bsize = stats.f_frsize = 4096
 
         # Number of blocks.  Some examples set to 0, others to large numbers.
-        stat.f_blocks = stat.f_bfree = stat.f_bavail = 2**32 / stat.f_frsize
+        stats.f_blocks = stats.f_bfree = stats.f_bavail = 2**32 / stats.f_frsize
 
         # Number of files.  Some set to 0, others to large numbers.
-        stat.f_files = stat.f_ffree = stat.f_favail = 10000
+        stats.f_files = stats.f_ffree = stats.f_favail = 10000
 
-        return stat
+        return stats
 
 
 def parse_args():
