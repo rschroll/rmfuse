@@ -9,6 +9,7 @@ import logging
 import os
 import pkg_resources
 import stat
+import sys
 
 import bidict
 import pyfuse3
@@ -401,18 +402,21 @@ def main():
 
     if not os.path.isdir(options.mountpoint):
         log.error(f'{options.mountpoint} directory does not exist')
-        return
-    elif os.path.ismount(options.mountpoint):
+        return errno.ENOTDIR
+    if os.path.ismount(options.mountpoint):
         log.error(f'{options.mountpoint} is a mount point already')
-        return
+        return errno.EEXIST
 
     pyfuse3.init(fs, options.mountpoint, fuse_options)
     try:
         trio.run(pyfuse3.main)
     except KeyboardInterrupt:
         log.debug('Exiting due to KeyboardInterrupt')
+    except Exception:
+        return 1
     finally:
         pyfuse3.close()
+    return 0
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
