@@ -150,7 +150,7 @@ several files).  A more sophisticated caching system is planned.
 
 RMfuse is powered by [rmcl](https://github.com/rschroll/rmcl), for accessing
 the reMarkable Cloud, and by [rmrl](https://github.com/rschroll/rmrl), for
-rendering annoated documents.  The early development of RMfuse can be found
+rendering annotated documents.  The early development of RMfuse can be found
 in the [rmcl repository](https://github.com/rschroll/rmcl)
 
 ## Trademarks

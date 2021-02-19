@@ -9,6 +9,7 @@ import logging
 import os
 import pkg_resources
 import stat
+import sys
 
 import bidict
 import trio
@@ -119,6 +120,7 @@ class RmApiFS(fuse.Operations):
         self.mode_file = ModeFile(self)
         self.inode_map[self.next_inode()] = self.mode_file.id
         self.buffers = dict()
+        self._prev_read_fail_count = 0
 
     def next_inode(self):
         value = self._next_inode
@@ -314,7 +316,12 @@ class RmApiFS(fuse.Operations):
         # try to read past the end of the file, despite consistently getting
         # no data.  Throwing an error alerts them to the problem.
         if not retval:
-            raise fuse.FUSEError(errno.ENODATA)
+            log.debug(f'  No data available; {self._prev_read_fail_count} previous failures')
+            self._prev_read_fail_count += 1
+            if self._prev_read_fail_count > 1:
+                raise fuse.FUSEError(errno.ENODATA)
+        else:
+            self._prev_read_fail_count = 0
         return retval
 
     @async_op
@@ -468,6 +475,14 @@ def main():
         logging.basicConfig(level=logging.INFO)
         # Fuse debug is really verbose, so stick that here.
         fuse_options.add('debug')
+
+    if not os.path.isdir(options.mountpoint):
+        log.error(f'{options.mountpoint} directory does not exist')
+        return errno.ENOTDIR
+    if os.path.ismount(options.mountpoint):
+        log.error(f'{options.mountpoint} is a mount point already')
+        return errno.EEXIST
+
     fuse.init(fs, options.mountpoint, fuse_options)
     try:
         if is_pyfuse3:
@@ -476,8 +491,11 @@ def main():
             fuse.main(workers=1)
     except KeyboardInterrupt:
         log.debug('Exiting due to KeyboardInterrupt')
+    except Exception:
+        return 1
     finally:
         fuse.close()
+    return 0
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
