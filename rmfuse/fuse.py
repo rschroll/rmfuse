@@ -226,7 +226,7 @@ class RmApiFS(fuse.Operations):
         return await self._getattr(inode, ctx)
 
     @async_op
-    async def setattr(self, inode, attr, fields, fh, ctx):
+    async def setattr(self, inode, attr, fields, fh, ctx=None):
         # llfuse calls this to truncate a file before writing to it.  We'll
         # just accept the call, but not do anything.
         log.debug(f'setattr called on {await self.get_by_id(self.get_id(inode))!r}')
@@ -246,11 +246,11 @@ class RmApiFS(fuse.Operations):
         return await self._getattr(inode, ctx)
 
     @async_op
-    async def readlink(self, inode, ctx):
+    async def readlink(self, inode, ctx=None):
         return NotImplemented
 
     @async_op
-    async def opendir(self, inode, ctx):
+    async def opendir(self, inode, ctx=None):
         return inode
 
     async def _readdir_entries(self, inode):
@@ -280,7 +280,7 @@ class RmApiFS(fuse.Operations):
                 yield name, attrs, start_id + i + 1
 
     @async_op
-    async def open(self, inode, flags, ctx):
+    async def open(self, inode, flags, ctx=None):
         if inode not in self.inode_map:
             raise fuse.FUSEError(errno.ENOENT)
         if (flags & os.O_RDWR or flags & os.O_WRONLY) and self.get_id(inode) != self.mode_file.id:
@@ -343,7 +343,7 @@ class RmApiFS(fuse.Operations):
             del self.buffers[fh]
 
     @async_op
-    async def rename(self, p_inode_old, name_old, p_inode_new, name_new, flags, ctx):
+    async def rename(self, p_inode_old, name_old, p_inode_new, name_new, flags, ctx=None):
         item = await self.get_by_name(p_inode_old, name_old)
         if item is None:
             raise fuse.FUSEError(errno.ENOENT)
@@ -363,7 +363,7 @@ class RmApiFS(fuse.Operations):
             raise fuse.FUSEError(errno.EPERM)
 
     @async_op
-    async def unlink(self, p_inode, name, ctx):
+    async def unlink(self, p_inode, name, ctx=None):
         item = await self.get_by_name(p_inode, name)
         if item is None:
             raise fuse.FUSEError(errno.ENOENT)
@@ -377,7 +377,7 @@ class RmApiFS(fuse.Operations):
             raise fuse.FUSEError(errno.EPERM)
 
     @async_op
-    async def rmdir(self, p_inode, name, ctx):
+    async def rmdir(self, p_inode, name, ctx=None):
         item = await self.get_by_name(p_inode, name)
         if item is None:
             raise fuse.FUSEError(errno.ENOENT)
@@ -393,7 +393,7 @@ class RmApiFS(fuse.Operations):
             raise fuse.FUSEError(errno.EPERM)
 
     @async_op
-    async def create(self, p_inode, name, mode, flags, ctx):
+    async def create(self, p_inode, name, mode, flags, ctx=None):
         existing = await self.get_by_name(p_inode, name)
         if existing:
             raise fuse.FUSEError(errno.EEXIST)
@@ -405,7 +405,7 @@ class RmApiFS(fuse.Operations):
         return (fuse.FileInfo(fh=inode, direct_io=True), await self._getattr(inode, ctx))
 
     @async_op
-    async def mkdir(self, p_inode, name, mode, ctx):
+    async def mkdir(self, p_inode, name, mode, ctx=None):
         existing = await self.get_by_name(p_inode, name)
         if existing:
             raise fuse.FUSEError(errno.EEXIST)
@@ -422,7 +422,7 @@ class RmApiFS(fuse.Operations):
         return await self._getattr(inode)
 
     @async_op
-    async def statfs(self, ctx):
+    async def statfs(self, ctx=None):
         stats = fuse.StatvfsData()
         # Block size, suggests optimal read sizes.  Presumably, we want this
         # large, but I don't know what the limits are.  This is what my root
