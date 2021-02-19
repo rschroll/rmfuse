@@ -136,7 +136,15 @@ class RmApiFS(fuse.Operations):
     async def get_by_id(self, id_):
         if id_ == self.mode_file.id:
             return self.mode_file
-        return await Item.get_by_id(id_)
+        try:
+            return await Item.get_by_id(id_)
+        except KeyError:
+            # It may be a newly-created file that hasn't been uploaded yet
+            for item, _ in self.buffers.values():
+                if item.id == id_:
+                    return item
+            logging.error(f'Attempt to get non-existant Item {id_}')
+            raise fuse.FUSEError(errno.ENOENT)
 
     async def filename(self, item, pitem=None):
         if item == pitem:
