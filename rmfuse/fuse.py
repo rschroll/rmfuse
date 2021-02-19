@@ -334,7 +334,7 @@ class RmApiFS(fuse.Operations):
         if fh not in self.buffers:
             return
 
-        document, data = self.buffers[fh]
+        document, data = self.buffers.pop(fh)
         if data.startswith(b'%PDF'):
             type_ = FileType.pdf
         elif b'mimetypeapplication/epub+zip' in data[:100]:
@@ -347,8 +347,6 @@ class RmApiFS(fuse.Operations):
         except ApiError as error:
             log.error(f'API Error: {error}')
             raise fuse.FUSEError(errno.EREMOTEIO)  # Unfortunately, this will be ignored
-        finally:
-            del self.buffers[fh]
 
     @async_op
     async def rename(self, p_inode_old, name_old, p_inode_new, name_new, flags, ctx=None):
