@@ -325,6 +325,18 @@ class RmApiFS(fuse.Operations):
         return retval
 
     @async_op
+    async def create(self, p_inode, name, mode, flags, ctx=None):
+        existing = await self.get_by_name(p_inode, name)
+        if existing:
+            raise fuse.FUSEError(errno.EEXIST)
+        parent = self.get_id(p_inode)
+        basename = name.decode('utf-8').rsplit('.', 1)[0]
+        document = Document.new(basename, parent)
+        inode = self.get_inode(document.id)
+        self.buffers[inode] = (document, b'')
+        return (fuse.FileInfo(fh=inode, direct_io=True), await self._getattr(inode, ctx))
+
+    @async_op
     async def write(self, fh, offset, buf):
         if self.get_id(fh) == self.mode_file.id:
             return await self.mode_file.write(offset, buf)
@@ -404,18 +416,6 @@ class RmApiFS(fuse.Operations):
             raise fuse.FUSEError(errno.EREMOTEIO)
         except VirtualItemError:
             raise fuse.FUSEError(errno.EPERM)
-
-    @async_op
-    async def create(self, p_inode, name, mode, flags, ctx=None):
-        existing = await self.get_by_name(p_inode, name)
-        if existing:
-            raise fuse.FUSEError(errno.EEXIST)
-        parent = self.get_id(p_inode)
-        basename = name.decode('utf-8').rsplit('.', 1)[0]
-        document = Document.new(basename, parent)
-        inode = self.get_inode(document.id)
-        self.buffers[inode] = (document, b'')
-        return (fuse.FileInfo(fh=inode, direct_io=True), await self._getattr(inode, ctx))
 
     @async_op
     async def mkdir(self, p_inode, name, mode, ctx=None):
