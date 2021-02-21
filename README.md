@@ -46,6 +46,11 @@ that code from https://my.remarkable.com/connect/desktop, which may
 require logging in to your reMarkable account.  RMfuse uses that code
 to obtain tokens which it uses in the future to authenticate itself.
 
+Note that RMfuse will not produce any output by default.  (You can use
+`-v` or `-vv` to make it more talkative.)  It does not provide a user
+interface to your files; instead you use another terminal or a file
+browser to access the mounted directory.
+
 To unmount and halt RMfuse, use the `fusermount` command:
 ```
 fusermount -u ~/remarkable
