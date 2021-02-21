@@ -291,6 +291,7 @@ class RmApiFS(fuse.Operations):
 
     @async_op
     async def open(self, inode, flags, ctx=None):
+        log.debug(f'Opening inode {inode} with flags {flags}')
         if inode not in self.inode_map:
             raise fuse.FUSEError(errno.ENOENT)
         if (flags & os.O_RDWR or flags & os.O_WRONLY) and self.get_id(inode) != self.mode_file.id:
@@ -330,14 +331,19 @@ class RmApiFS(fuse.Operations):
         if existing:
             raise fuse.FUSEError(errno.EEXIST)
         parent = self.get_id(p_inode)
-        basename = name.decode('utf-8').rsplit('.', 1)[0]
+        basename, ext = name.decode('utf-8').rsplit('.', 1)
+        if ext not in ('pdf', 'epub'):
+            log.warning(f'Trying to create file {name}.  '
+                        'If this is not a PDF or EPUB file, it will fail.')
         document = Document.new(basename, parent)
         inode = self.get_inode(document.id)
         self.buffers[inode] = (document, b'')
+        log.debug(f'Created {basename} for {name}, with inode {inode} and ID {document.id}')
         return (fuse.FileInfo(fh=inode, direct_io=True), await self._getattr(inode, ctx))
 
     @async_op
     async def write(self, fh, offset, buf):
+        log.debug(f'Writing to {fh} at {offset}, length {len(buf)}')
         if self.get_id(fh) == self.mode_file.id:
             return await self.mode_file.write(offset, buf)
 
@@ -350,6 +356,7 @@ class RmApiFS(fuse.Operations):
 
     @async_op
     async def release(self, fh):
+        log.debug(f'Releasing inode {fh}')
         if fh not in self.buffers:
             return
 
@@ -359,7 +366,7 @@ class RmApiFS(fuse.Operations):
         elif b'mimetypeapplication/epub+zip' in data[:100]:
             type_ = FileType.epub
         else:
-            log.error('Error: Not a PDF or EPUB file')
+            log.error(f'Error: Not a PDF or EPUB file (file was {document.name})')
             raise fuse.FUSEError(errno.EIO)  # Unfortunately, this will be ignored
         try:
             await document.upload(io.BytesIO(data), type_)
@@ -369,6 +376,7 @@ class RmApiFS(fuse.Operations):
 
     @async_op
     async def rename(self, p_inode_old, name_old, p_inode_new, name_new, flags, ctx=None):
+        log.debug(f'Renaming {name_old} (in {p_inode_old}) to {name_new} (in {p_inode_new})')
         item = await self.get_by_name(p_inode_old, name_old)
         if item is None:
             raise fuse.FUSEError(errno.ENOENT)
@@ -389,6 +397,7 @@ class RmApiFS(fuse.Operations):
 
     @async_op
     async def unlink(self, p_inode, name, ctx=None):
+        log.debug(f'Unlinking {name}')
         item = await self.get_by_name(p_inode, name)
         if item is None:
             raise fuse.FUSEError(errno.ENOENT)
@@ -403,6 +412,7 @@ class RmApiFS(fuse.Operations):
 
     @async_op
     async def rmdir(self, p_inode, name, ctx=None):
+        log.debug(f'Removing directory {name}')
         item = await self.get_by_name(p_inode, name)
         if item is None:
             raise fuse.FUSEError(errno.ENOENT)
@@ -419,6 +429,7 @@ class RmApiFS(fuse.Operations):
 
     @async_op
     async def mkdir(self, p_inode, name, mode, ctx=None):
+        log.debug(f'Making directory {name}')
         existing = await self.get_by_name(p_inode, name)
         if existing:
             raise fuse.FUSEError(errno.EEXIST)
