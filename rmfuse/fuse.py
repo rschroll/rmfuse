@@ -16,6 +16,7 @@ import pyfuse3
 import trio
 
 from rmcl import Document, Folder, Item, invalidate_cache
+from rmcl.api import get_client_s
 from rmcl.const import ROOT_ID, FileType
 from rmcl.exceptions import ApiError, VirtualItemError
 from rmcl.utils import now
@@ -407,6 +408,8 @@ def main():
         log.error(f'{options.mountpoint} is a mount point already')
         return errno.EEXIST
 
+    # Trigger getting the client, to prompt for one-time code, if needed
+    get_client_s()
     pyfuse3.init(fs, options.mountpoint, fuse_options)
     try:
         trio.run(pyfuse3.main)
