@@ -411,6 +411,7 @@ def main():
     # Trigger getting the client, to prompt for one-time code, if needed
     get_client_s()
     pyfuse3.init(fs, options.mountpoint, fuse_options)
+    log.debug(f'Mounting on {options.mountpoint}')
     try:
         trio.run(pyfuse3.main)
     except KeyboardInterrupt:
