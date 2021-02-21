@@ -145,7 +145,7 @@ class RmApiFS(fuse.Operations):
             for item, _ in self.buffers.values():
                 if item.id == id_:
                     return item
-            logging.error(f'Attempt to get non-existant Item {id_}')
+            logging.error(f'Attempt to get non-existent Item {id_}')
             raise fuse.FUSEError(errno.ENOENT)
 
     async def filename(self, item, pitem=None):
