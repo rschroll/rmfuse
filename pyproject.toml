@@ -12,12 +12,19 @@ python = "^3.7"
 bidict = "^0.21.2"
 rmrl = "^0.1.2"
 rmcl = "^0.3.1"
-llfuse = "^1.4.1"
+
+# Need one of the following
+pyfuse3 = { version = "^3.2.0", optional = true }
+llfuse = { version = "^1.4.1", optional = true }
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.20.0"
 jedi = "0.17.2"
 pylint = "^2.6.0"
+
+[tool.poetry.extras]
+pyfuse3 = ["pyfuse3"]
+llfuse = ["llfuse"]
 
 [tool.poetry.scripts]
 rmfuse = "rmfuse.fuse:main"
