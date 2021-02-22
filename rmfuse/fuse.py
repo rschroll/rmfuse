@@ -10,6 +10,7 @@ import os
 import pkg_resources
 import stat
 import sys
+import socket
 
 import bidict
 import pyfuse3
@@ -389,6 +390,17 @@ def parse_args():
     parser.add_argument('--version', action='version', version=VERSION)
     return parser.parse_args()
 
+def isconnected(host='1.1.1.1', port=80, timeout=1):
+    # timeout is expressed in seconds
+    try:
+        s = socket.create_connection((host, port), timeout)
+        if s is not None:
+            s.close()
+        return True
+    except OSError:
+        pass
+    return False
+
 def main():
     options = parse_args()
     fs = RmApiFS(options.mode)
@@ -401,6 +413,9 @@ def main():
         # Fuse debug is really verbose, so stick that here.
         fuse_options.add('debug')
 
+    if not isconnected():
+        log.error('rmfuse cannot get online')
+        return errno.EHOSTUNREACH
     if not os.path.isdir(options.mountpoint):
         log.error(f'{options.mountpoint} directory does not exist')
         return errno.ENOTDIR
