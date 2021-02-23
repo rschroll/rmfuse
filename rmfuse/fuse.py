@@ -8,9 +8,9 @@ import io
 import logging
 import os
 import pkg_resources
+import socket
 import stat
 import sys
-import socket
 
 import bidict
 import pyfuse3
@@ -394,12 +394,10 @@ def isconnected(host='1.1.1.1', port=80, timeout=1):
     # timeout is expressed in seconds
     try:
         s = socket.create_connection((host, port), timeout)
-        if s is not None:
-            s.close()
+        s.close()
         return True
-    except OSError:
-        pass
-    return False
+    except:
+        return False
 
 def main():
     options = parse_args()
