@@ -505,6 +505,11 @@ class RmApiFS(fuse.Operations):
         return stats
 
 
+class WriteConfigAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        write_default_config()
+        parser.exit()
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('mountpoint', type=str, help="Mount point of filesystem")
@@ -512,6 +517,8 @@ def parse_args():
                         help="Enable verbose output (-vv for even more verbosity)")
     parser.add_argument('-m', '--mode', type=FSMode, choices=list(FSMode),
                         default=FSMode.annot, help="Type of files to mount")
+    parser.add_argument('--write-config', action=WriteConfigAction, nargs=0,
+                        help="Write a default configurations file")
     parser.add_argument('--version', action='version', version=VERSION)
     return parser.parse_args()
 
