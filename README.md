@@ -103,6 +103,8 @@ RMfuse with the llfuse package:
 pip install rmfuse[llfuse]
 ```
 
+There is a known bug with writing large files to RMfuse on a Mac.
+
 #### Windows
 
 As far as I know, no one has tried this.  If you're interested,
@@ -175,9 +177,8 @@ book.epub       document.pdf    notebook.pdf
 RMfuse allows reading of all files in the reMarkable Cloud.  Since reading
 the file requires several HTTP requests, as well as local processing, reads
 make take some time.  Running RMfuse in verbose mode (`-v` or `-vv`) will
-display information about the actions underway.  The most recent file
-accessed is cached, to improve performance.  More sophisticated caching
-is planned for the future.
+display information about the actions underway.  Open files are cached, to
+improve performance.  More sophisticated caching is planned for the future.
 
 RMfuse does its best to provide accurate metadata for the files.  However,
 the reMarkable Cloud provides only modification dates, so that is reported
@@ -210,6 +211,11 @@ local filesystem, edit it, and then copy it back to the RMfuse filesystem.
 This will cause annotations to be lost (in `orig` mode) or flattened into
 the document itself (in `annot` mode).
 
+There are several rendering options that affect the appearance of annotated
+documents.  These can be set in a config file, which by default lives at
+`~/.config/rmfuse/config.ini`.  Run `rmfuse --write-config` to create a
+config file with the defaults at that location.
+
 ## Known Limitations
 
 - The file size for annotated files is just an estimate before the file
@@ -228,9 +234,9 @@ too late for FUSE to pass the error back to the caller.  RMfuse may be
 able to throw an error earlier, based on the first bytes it receives;
 this will be investigated in the future.
 
-- RMfuse caches the most-recently accessed file in memory.  This is bad
-for large files (too much memory used) and small files (we could cache
-several files).  A more sophisticated caching system is planned.
+- RMfuse caches open files in memory.  This is bad for large files (too
+much memory used) and small files (we could cache several files).  A more
+sophisticated caching system is planned.
 
 ## Libraries
 
