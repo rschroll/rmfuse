@@ -8,25 +8,106 @@ using the same tools you use on your local system.
 
 ## Installation
 
-RMfuse requires Python 3.7 or later.  It also requires the FUSE3 library.
-This should be available in most Linuxes (`fuse3` and `libfuse3-3` in
-Debian-based distributions) and BSDs.  RMfuse may work with
-[macFuse](https://osxfuse.github.io/), but that is untested.  Windows
-users may try [WinFuse](https://github.com/billziss-gh/winfuse), also
-untested.  Installation of RMfuse and its dependencies will likely
-require the FUSE3 headers and a C build system (`libfuse3-dev` and
-`build-essential` in Debian).
+RMfuse requires Python 3.7 or later.  It also requires either FUSE3 and
+the [pyfuse3 library](https://github.com/libfuse/pyfuse3), or FUSE2 and
+the [llfuse library](https://github.com/python-llfuse/python-llfuse).
+These can be installed from pip with RMfuse, or installed separately
+via your system package manager.  This means that there are three main
+ways to get RMfuse installed.
 
-RMfuse can be installed with pip:
+*Confused?  Look below to see examples for several OSes.*
+
+### Install with pyfuse3 through pip
+
+Prior to installing RMfuse, you will need to install FUSE3, along with
+its header files, which are probably in a package with a name something
+like *libfuse3-devel*.  You will also need a C build system.  Once those
+are installed, you can install RMfuse with pip:
+```
+pip install rmfuse[pyfuse3]
+```
+Alternatively, you may clone this repository and install with
+[Poetry](https://python-poetry.org/):
+```
+poetry install -E pyfuse3
+```
+
+### Install with llfuse through pip
+
+Prior to installing RMfuse, you will need to install FUSE, along with
+its header files, which are probably in a package with a name something
+like *libfuse-devel*.  You will also need a C build system.  Once those
+are installed, you can install RMfuse with pip:
+```
+pip install rmfuse[llfuse]
+```
+Alternatively, you may clone this repository and install with
+[Poetry](https://python-poetry.org/):
+```
+poetry install -E llfuse
+```
+
+### Install with system FUSE packages
+
+If your system provides either pyfuse3 or llfuse in its package system,
+you can install one of them that way.  You can then install RMfuse
+without needing to specify either library:
 ```
 pip install rmfuse
 ```
-Alternatively, you may clone this repository.
-[Poetry](https://python-poetry.org/) is used for development, so once that
-is installed you can run
+RMfuse will find whichever library is available at runtime.  (Note that
+if you are using a venv, you will need to create it with the
+`--system-site-packages` option.  Otherwise, RMfuse will not be able to
+see the library you installed.)
+
+### Example installations
+
+Here are some instructions for installations known to suceed.  These are
+not the only solutions, so feel free to go another direction.  But if
+you're confused by all of the options, you might want to start here.
+
+#### Debian-based systems
+
+Install the FUSE3 libraries and headers with apt:
 ```
-poetry install
+sudo apt install fuse3 libfuse3-3 libfuse3-dev build-essential
 ```
+Then install RMfuse in your chosen environment:
+```
+pip install rmfuse[pyfuse3]
+```
+This was tested on Ubuntu 20.04.
+
+#### Fedora-based systems
+
+Install FUSE3 and pyfuse3 with dnf:
+```
+sudo dnf install fuse3-libs python3-fusepy
+```
+Be sure to add `~/.local/bin` to your path.  Then install with your
+system's pip:
+```
+pip install rmfuse
+```
+This was tested on Fedora 33.
+
+#### MacOS
+
+Install [macFuse](https://osxfuse.github.io/) with brew:
+```
+brew install macfuse pkg-config
+```
+You will need to allow a kernel extension and reboot.  Then install
+RMfuse with the llfuse package:
+```
+pip install rmfuse[llfuse]
+```
+
+#### Windows
+
+As far as I know, no one has tried this.  If you're interested,
+[WinFuse](https://github.com/billziss-gh/winfuse) is probably the place
+to start.
 
 ## Usage
 
