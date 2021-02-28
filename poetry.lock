@@ -405,7 +405,7 @@ xdg = ">=5.0.1,<6.0.0"
 
 [[package]]
 name = "rmrl"
-version = "0.1.2"
+version = "0.2.0"
 description = "Render reMarkable documents to PDF"
 category = "main"
 optional = false
@@ -564,7 +564,7 @@ pyfuse3 = ["pyfuse3"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "960404ec8589571daaa0af94cdd99245b07a796117b2c5b146f960b6cd1f57b0"
+content-hash = "fb325b33e0e9ba4680cb5876275e6e5a09d3a40f3667dc513ab82bcae980bca7"
 
 [metadata.files]
 anyio = [
@@ -866,8 +866,8 @@ rmcl = [
     {file = "rmcl-0.3.1.tar.gz", hash = "sha256:5b5316adf53cca9e56273cad220cb7374cd56e7bac962c943868b05fc090e98c"},
 ]
 rmrl = [
-    {file = "rmrl-0.1.2-py3-none-any.whl", hash = "sha256:173231c7122a11201232ed8fe74e4a9a65192b87886ef8a98ae912aa9b875c26"},
-    {file = "rmrl-0.1.2.tar.gz", hash = "sha256:8c8e757af5ca3eb7475f56803f7f37256fe4c5cad3a9ea5ad7534b2ebd172447"},
+    {file = "rmrl-0.2.0-py3-none-any.whl", hash = "sha256:a6af752224b7755c6ccc0f8820e427e5045afb17c38f3797fda701c7eb975112"},
+    {file = "rmrl-0.2.0.tar.gz", hash = "sha256:ea7def68841e21a0f716a71dcb809ee9460a6876253601fe0e51bbcc69e7414f"},
 ]
 six = [
     {file = "six-1.15.0-py2.py3-none-any.whl", hash = "sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"},

@@ -10,7 +10,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.7"
 bidict = "^0.21.2"
-rmrl = "^0.1.2"
+rmrl = "^0.2.0"
 rmcl = "^0.3.1"
 
 # Need one of the following

@@ -8,6 +8,7 @@ import io
 import logging
 import os
 import pkg_resources
+import socket
 import stat
 import sys
 
@@ -15,6 +16,7 @@ import bidict
 import trio
 
 from rmcl import Document, Folder, Item, invalidate_cache
+from rmcl.api import get_client_s
 from rmcl.const import ROOT_ID, FileType
 from rmcl.exceptions import ApiError, VirtualItemError
 from rmcl.utils import now
@@ -484,6 +486,15 @@ def parse_args():
     parser.add_argument('--version', action='version', version=VERSION)
     return parser.parse_args()
 
+def isconnected(host='1.1.1.1', port=80, timeout=1):
+    # timeout is expressed in seconds
+    try:
+        s = socket.create_connection((host, port), timeout)
+        s.close()
+        return True
+    except:
+        return False
+
 def main():
     options = parse_args()
     fs = RmApiFS(options.mode)
@@ -498,6 +509,9 @@ def main():
         # Fuse debug is really verbose, so stick that here.
         fuse_options.add('debug')
 
+    if not isconnected():
+        log.error('rmfuse cannot get online')
+        return errno.EHOSTUNREACH
     if not os.path.isdir(options.mountpoint):
         log.error(f'{options.mountpoint} directory does not exist')
         return errno.ENOTDIR
@@ -505,7 +519,10 @@ def main():
         log.error(f'{options.mountpoint} is a mount point already')
         return errno.EEXIST
 
+    # Trigger getting the client, to prompt for one-time code, if needed
+    get_client_s()
     fuse.init(fs, options.mountpoint, fuse_options)
+    log.debug(f'Mounting on {options.mountpoint}')
     try:
         if is_pyfuse3:
             trio.run(fuse.main)
