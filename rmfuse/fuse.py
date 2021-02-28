@@ -2,6 +2,7 @@
 # This file is part of RMfuse and is distributed under the MIT license.
 
 import argparse
+from collections import defaultdict
 import enum
 import errno
 import io
@@ -122,8 +123,10 @@ class RmApiFS(fuse.Operations):
         self.mode = mode
         self.mode_file = ModeFile(self)
         self.inode_map[self.next_inode()] = self.mode_file.id
-        self.buffers = dict()
+        self.write_buffers = dict()
         self.uploading = dict()
+        self.read_buffers = dict()
+        self.fh_count = defaultdict(int)
         self._prev_read_fail_count = 0
 
     def next_inode(self):
@@ -146,7 +149,7 @@ class RmApiFS(fuse.Operations):
             return await Item.get_by_id(id_)
         except KeyError:
             # It may be a newly-created file that hasn't been uploaded yet
-            for item, _ in self.buffers.values():
+            for item, _ in self.write_buffers.values():
                 if item.id == id_:
                     return item
             # Or it may be uploading right now.  This may lead to tears.
@@ -207,7 +210,7 @@ class RmApiFS(fuse.Operations):
     async def _getattr(self, inode, ctx=None):
         entry = fuse.EntryAttributes()
 
-        if inode in self.buffers:
+        if inode in self.write_buffers:
             entry.st_mode = (stat.S_IFREG | 0o644)
             entry.st_size = 0
             stamp = int(now().timestamp() * 1e9)
@@ -299,6 +302,10 @@ class RmApiFS(fuse.Operations):
                 attrs = trio.run(self._getattr, self.get_inode(c.id))
                 yield name, attrs, start_id + i + 1
 
+    def _get_file_handle(self, inode):
+        self.fh_count[inode] += 1
+        return fuse.FileInfo(fh=inode, direct_io=True)  # direct_io means our size doesn't have to be correct
+
     @async_op
     async def open(self, inode, flags, ctx=None):
         log.debug(f'Opening inode {inode} with flags {flags}')
@@ -306,21 +313,31 @@ class RmApiFS(fuse.Operations):
             raise fuse.FUSEError(errno.ENOENT)
         if (flags & os.O_RDWR or flags & os.O_WRONLY) and self.get_id(inode) != self.mode_file.id:
             raise fuse.FUSEError(errno.EPERM)
-        return fuse.FileInfo(fh=inode, direct_io=True)  # direct_io means our size doesn't have to be correct
+
+        # Get the contents once and cache in anticipation of multiple read calls.
+        if inode not in self.read_buffers:
+            item = await self.get_by_id(self.get_id(inode))
+            if self.mode == FSMode.meta:
+                contents = io.BytesIO(f'{item._metadata!r}\n'.encode('utf-8'))
+            elif self.mode == FSMode.raw:
+                contents = await item.raw()
+            elif self.mode == FSMode.annot or (self.mode == FSMode.orig and
+                                            await item.type() == FileType.notes):
+                contents = await item.annotated()
+            elif self.mode == FSMode.orig:
+                contents = await item.contents()
+            self.read_buffers[inode] = contents
+
+        return self._get_file_handle(inode)
 
     @async_op
     async def read(self, fh, start, size):
         log.debug(f'Reading from {fh} at {start}, length {size}')
-        item = await self.get_by_id(self.get_id(fh))
-        if self.mode == FSMode.meta:
-            contents = io.BytesIO(f'{item._metadata!r}\n'.encode('utf-8'))
-        elif self.mode == FSMode.raw:
-            contents = await item.raw()
-        elif self.mode == FSMode.annot or (self.mode == FSMode.orig and
-                                           await item.type() == FileType.notes):
-            contents = await item.annotated()
-        elif self.mode == FSMode.orig:
-            contents = await item.contents()
+        if fh not in self.read_buffers:
+            log.error(f'Trying to read from {fh}, but no buffer available')
+            raise fuse.FUSEError(errno.ENODATA)
+
+        contents = self.read_buffers[fh]
         contents.seek(start)
         retval = contents.read(size)
         # Due to inaccurate size estimates, some applications continually
@@ -347,9 +364,9 @@ class RmApiFS(fuse.Operations):
                         'If this is not a PDF or EPUB file, it will fail.')
         document = Document.new(basename, parent)
         inode = self.get_inode(document.id)
-        self.buffers[inode] = (document, b'')
+        self.write_buffers[inode] = (document, b'')
         log.debug(f'Created {basename} for {name}, with inode {inode} and ID {document.id}')
-        return (fuse.FileInfo(fh=inode, direct_io=True), await self._getattr(inode, ctx))
+        return (self._get_file_handle(inode), await self._getattr(inode, ctx))
 
     @async_op
     async def write(self, fh, offset, buf):
@@ -357,20 +374,30 @@ class RmApiFS(fuse.Operations):
         if self.get_id(fh) == self.mode_file.id:
             return await self.mode_file.write(offset, buf)
 
-        if fh in self.buffers:
-            document, data = self.buffers[fh]
-            self.buffers[fh] = (document, data[:offset] + buf + data[offset + len(buf):])
+        if fh in self.write_buffers:
+            document, data = self.write_buffers[fh]
+            self.write_buffers[fh] = (document, data[:offset] + buf + data[offset + len(buf):])
             return len(buf)
 
         raise fuse.FUSEError(errno.EPERM)
 
     @async_op
     async def release(self, fh):
-        log.debug(f'Releasing inode {fh}')
-        if fh not in self.buffers:
+        if self.fh_count[fh] > 0:
+            self.fh_count[fh] -= 1
+
+        if self.fh_count[fh] > 0:
+            log.debug(f'Decremented count on inode {fh}')
             return
 
-        document, data = self.buffers.pop(fh)
+        log.debug(f'Releasing inode {fh}')
+        if fh in self.read_buffers:
+            del self.read_buffers[fh]
+
+        if fh not in self.write_buffers:
+            return
+
+        document, data = self.write_buffers.pop(fh)
         if data.startswith(b'%PDF'):
             type_ = FileType.pdf
         elif b'mimetypeapplication/epub+zip' in data[:100]:
