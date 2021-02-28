@@ -558,7 +558,7 @@ pyfuse3 = ["pyfuse3"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "e44e95b415e7fb05cec428395b58df92703f0664c24fa9003794a91b6a288af1"
+content-hash = "c228bd3079a304c5ad2e9cb71e76cba6b29d5b44083140624885a15ffcc3cd30"
 
 [metadata.files]
 anyio = [

@@ -23,6 +23,7 @@ from rmcl.const import ROOT_ID, FileType
 from rmcl.exceptions import ApiError, VirtualItemError
 from rmcl.utils import now
 
+from .config import get_config, write_default_config
 from .fuselib import async_op, fuse, is_pyfuse3
 
 log = logging.getLogger(__name__)
@@ -323,7 +324,7 @@ class RmApiFS(fuse.Operations):
                 contents = await item.raw()
             elif self.mode == FSMode.annot or (self.mode == FSMode.orig and
                                             await item.type() == FileType.notes):
-                contents = await item.annotated()
+                contents = await item.annotated(**get_config('render'))
             elif self.mode == FSMode.orig:
                 contents = await item.contents()
             self.read_buffers[inode] = contents
