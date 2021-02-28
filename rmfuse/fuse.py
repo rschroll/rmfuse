@@ -8,6 +8,7 @@ import io
 import logging
 import os
 import pkg_resources
+import platform
 import socket
 import stat
 import sys
@@ -500,6 +501,9 @@ def main():
     fs = RmApiFS(options.mode)
     fuse_options = set(fuse.default_options)
     fuse_options.add('fsname=rmapi')
+    # On Macs, don't allow metadata files
+    if platform.system() == 'Darwin':
+        fuse_options.add('nodoubleapple')
     # From llfuse; causes problems with fuse3
     fuse_options.discard('nonempty')
     if options.verbose == 1:
