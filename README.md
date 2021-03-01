@@ -62,7 +62,7 @@ see the library you installed.)
 
 ### Example installations
 
-Here are some instructions for installations known to suceed.  These are
+Here are some instructions for installations known to succeed.  These are
 not the only solutions, so feel free to go another direction.  But if
 you're confused by all of the options, you might want to start here.
 
@@ -90,6 +90,17 @@ system's pip:
 pip install rmfuse
 ```
 This was tested on Fedora 33.
+
+#### Arch-based systems
+
+Install RMfuse from this AUR package: [rmfuse](https://aur.archlinux.org/packages/rmfuse/)<sup>AUR</sup>.
+
+[pyfuse3](https://aur.archlinux.org/packages/python-pyfuse3/)<sup>AUR</sup> and [llfuse](https://archlinux.org/packages/community/x86_64/python-llfuse/) are set as optional. Choose the one you prefer and install it.
+
+For example
+```
+yay -S rmfuse python-pyfuse3
+```
 
 #### MacOS
 
