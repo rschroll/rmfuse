@@ -538,7 +538,7 @@ def main():
     fuse_options.add('fsname=rmapi')
     # On Macs, don't allow metadata files
     if platform.system() == 'Darwin':
-        fuse_options.add('nodoubleapple')
+        fuse_options.add('noappledouble')
     # From llfuse; causes problems with fuse3
     fuse_options.discard('nonempty')
     if options.verbose == 1:
