@@ -3,7 +3,6 @@
 
 import argparse
 from collections import defaultdict
-import enum
 import errno
 import io
 import logging
@@ -23,21 +22,11 @@ from rmcl.const import ROOT_ID, FileType
 from rmcl.exceptions import ApiError, VirtualItemError
 from rmcl.utils import now
 
-from .config import get_config, write_default_config
+from .config import FSMode, get_config, write_default_config
 from .fuselib import async_op, fuse, is_pyfuse3
 
 log = logging.getLogger(__name__)
 VERSION = pkg_resources.get_distribution('rmfuse').version
-
-class FSMode(enum.Enum):
-    meta = 'meta'
-    raw = 'raw'
-    orig = 'orig'
-    annot = 'annot'
-
-    def __str__(self):
-        return self.name
-
 
 class ModeFile():
 
@@ -511,12 +500,15 @@ class WriteConfigAction(argparse.Action):
         parser.exit()
 
 def parse_args():
+    defaults = get_config('mount')
+    mountpoint = defaults['mountpoint']
     parser = argparse.ArgumentParser()
-    parser.add_argument('mountpoint', type=str, help="Mount point of filesystem")
+    parser.add_argument('mountpoint', type=str, help="Mount point of filesystem",
+                        default=mountpoint, nargs=('?' if mountpoint else 1))
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Enable verbose output (-vv for even more verbosity)")
     parser.add_argument('-m', '--mode', type=FSMode, choices=list(FSMode),
-                        default=FSMode.annot, help="Type of files to mount")
+                        default=defaults['mode'], help="Type of files to mount")
     parser.add_argument('--write-config', action=WriteConfigAction, nargs=0,
                         help="Write a default configurations file")
     parser.add_argument('--version', action='version', version=VERSION)

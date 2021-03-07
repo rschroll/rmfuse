@@ -225,7 +225,8 @@ the document itself (in `annot` mode).
 There are several rendering options that affect the appearance of annotated
 documents.  These can be set in a config file, which by default lives at
 `~/.config/rmfuse/config.ini`.  Run `rmfuse --write-config` to create a
-config file with the defaults at that location.
+config file with the defaults at that location.  The default mode and
+mountpoint can also be set in this file.
 
 ## Known Limitations
 
