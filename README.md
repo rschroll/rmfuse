@@ -82,7 +82,7 @@ This was tested on Ubuntu 20.04.
 
 Install FUSE3 and pyfuse3 with dnf:
 ```
-sudo dnf install fuse3-libs python3-fusepy
+sudo dnf install fuse3-libs python3-fusepy fuse3-devel python3-devel
 ```
 Be sure to add `~/.local/bin` to your path.  Then install with your
 system's pip:
