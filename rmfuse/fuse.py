@@ -535,7 +535,7 @@ def main():
     options = parse_args()
     fs = RmApiFS(options.mode)
     fuse_options = set(fuse.default_options)
-    fuse_options.add('fsname=rmapi')
+    fuse_options.add('fsname=rmfuse')
     # On Macs, don't allow metadata files
     if platform.system() == 'Darwin':
         fuse_options.add('noappledouble')
