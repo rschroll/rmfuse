@@ -114,7 +114,7 @@ RMfuse with the llfuse package:
 pip install rmfuse[llfuse]
 ```
 
-There is a known bug with writing large files to RMfuse on a Mac.
+There is a [known bug](https://github.com/rschroll/rmfuse/issues/18) with writing large files to RMfuse on a Mac.
 
 #### Windows
 
