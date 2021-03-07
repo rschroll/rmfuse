@@ -1,6 +1,7 @@
 # Copyright 2021 Robert Schroll
 # This file is part of RMfuse and is distributed under the MIT license.
 
+import ast
 from configparser import ConfigParser
 import enum
 import inspect
@@ -28,6 +29,11 @@ def _get_render_defaults():
     del defaults['progress_cb']
     return defaults
 
+def get_literal(type_):
+    def func(config, key):
+        return type_(ast.literal_eval(config.get(key).strip()))
+    return func
+
 DEFAULTS = {
     'mount': {
         'mountpoint': '',
@@ -41,6 +47,8 @@ LOOKUP_FUNCS = {
     float:  lambda config, key: config.getfloat(key),
     int:    lambda config, key: config.getint(key),
     str:    lambda config, key: config.get(key),
+    list:   get_literal(list),
+    tuple:  get_literal(tuple),
     FSMode: lambda config, key: FSMode(config.get(key))
 }
 
