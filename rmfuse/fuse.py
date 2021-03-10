@@ -504,7 +504,7 @@ def parse_args():
     mountpoint = defaults['mountpoint']
     parser = argparse.ArgumentParser()
     parser.add_argument('mountpoint', type=str, help="Mount point of filesystem",
-                        default=mountpoint, nargs=('?' if mountpoint else 1))
+                        default=mountpoint, nargs=('?' if mountpoint else None))  # None means one required
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Enable verbose output (-vv for even more verbosity)")
     parser.add_argument('-m', '--mode', type=FSMode, choices=list(FSMode),
