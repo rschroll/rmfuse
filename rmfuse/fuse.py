@@ -142,12 +142,6 @@ class RmApiFS(fuse.Operations):
             for item, _ in self.write_buffers.values():
                 if item.id == id_:
                     return item
-            # Or it may be uploading right now.  This may lead to tears.
-            for item in self.uploading.values():
-                if item.id == id_:
-                    logging.warning(f'Getting Item {id_} during upload.  '
-                                    'This may lead to odd behavior!')
-                    return item
             logging.error(f'Attempt to get non-existent Item {id_}')
             raise fuse.FUSEError(errno.ENOENT)
 
