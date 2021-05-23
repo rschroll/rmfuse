@@ -114,7 +114,6 @@ class RmApiFS(fuse.Operations):
         self.mode_file = ModeFile(self)
         self.inode_map[self.next_inode()] = self.mode_file.id
         self.write_buffers = dict()
-        self.uploading = dict()
         self.read_buffers = dict()
         self.fh_count = defaultdict(int)
         self._prev_read_fail_count = 0
@@ -141,12 +140,6 @@ class RmApiFS(fuse.Operations):
             # It may be a newly-created file that hasn't been uploaded yet
             for item, _ in self.write_buffers.values():
                 if item.id == id_:
-                    return item
-            # Or it may be uploading right now.  This may lead to tears.
-            for item in self.uploading.values():
-                if item.id == id_:
-                    logging.warning(f'Getting Item {id_} during upload.  '
-                                    'This may lead to odd behavior!')
                     return item
             logging.error(f'Attempt to get non-existent Item {id_}')
             raise fuse.FUSEError(errno.ENOENT)
@@ -395,15 +388,11 @@ class RmApiFS(fuse.Operations):
         else:
             log.error(f'Error: Not a PDF or EPUB file (file was {document.name})')
             raise fuse.FUSEError(errno.EIO)  # Unfortunately, this will be ignored
-
-        self.uploading[fh] = document
         try:
             await document.upload(io.BytesIO(data), type_)
         except ApiError as error:
             log.error(f'API Error: {error}')
             raise fuse.FUSEError(errno.EREMOTEIO)  # Unfortunately, this will be ignored
-        finally:
-            del self.uploading[fh]
 
     @async_op
     async def rename(self, p_inode_old, name_old, p_inode_new, name_new, flags, ctx=None):
