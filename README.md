@@ -118,9 +118,7 @@ There is a [known bug](https://github.com/rschroll/rmfuse/issues/18) with writin
 
 #### Windows
 
-As far as I know, no one has tried this.  If you're interested,
-[WinFuse](https://github.com/billziss-gh/winfuse) is probably the place
-to start.
+RMfuse can be run on Windows via the Windows Subsystem for Linux (WSL). Currently only tested on Ubuntu 20.04 under WSL2. Follow the installation instructions above for your Linux distribution, then launch RMfuse using the `--allow-other` flag. The mounted directory will be accessible via Windows explorer. For performance reasons you should choose a mount point under the WSL file system. Some issues have been observed when accessing large files. 
 
 ## Usage
 

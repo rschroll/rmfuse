@@ -511,6 +511,8 @@ def parse_args():
                         default=defaults['mode'], help="Type of files to mount")
     parser.add_argument('--write-config', action=WriteConfigAction, nargs=0,
                         help="Write a default configurations file")
+    parser.add_argument('--allow-other', dest='allow_other', action='store_const', const=True,
+                        default=False, help="Enable the allow_other FUSE flag")
     parser.add_argument('--version', action='version', version=VERSION)
     return parser.parse_args()
 
@@ -528,7 +530,9 @@ def main():
     fs = RmApiFS(options.mode)
     fuse_options = set(fuse.default_options)
     fuse_options.add('fsname=rmfuse')
-    fuse_options.add('allow_other')
+    if options.allow_other:
+        fuse_options.add('allow_other')
+
     # On Macs, don't allow metadata files
     if platform.system() == 'Darwin':
         fuse_options.add('noappledouble')
