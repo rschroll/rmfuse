@@ -93,9 +93,12 @@ This was tested on Fedora 33.
 
 #### Arch-based systems
 
-Install RMfuse from this AUR package: [rmfuse](https://aur.archlinux.org/packages/rmfuse/)<sup>AUR</sup>.
+Install RMfuse from this AUR package:
+[rmfuse](https://aur.archlinux.org/packages/rmfuse/)<sup>AUR</sup>.
 
-[pyfuse3](https://aur.archlinux.org/packages/python-pyfuse3/)<sup>AUR</sup> and [llfuse](https://archlinux.org/packages/community/x86_64/python-llfuse/) are set as optional. Choose the one you prefer and install it.
+[pyfuse3](https://aur.archlinux.org/packages/python-pyfuse3/)<sup>AUR</sup> and
+[llfuse](https://archlinux.org/packages/community/x86_64/python-llfuse/) are set
+as optional. Choose the one you prefer and install it.
 
 For example
 ```
@@ -114,11 +117,17 @@ RMfuse with the llfuse package:
 pip install rmfuse[llfuse]
 ```
 
-There is a [known bug](https://github.com/rschroll/rmfuse/issues/18) with writing large files to RMfuse on a Mac.
+There is a [known bug](https://github.com/rschroll/rmfuse/issues/18) with writing
+large files to RMfuse on a Mac.
 
 #### Windows
 
-RMfuse can be run on Windows via the Windows Subsystem for Linux (WSL). Currently only tested on Ubuntu 20.04 under WSL2. Follow the installation instructions above for your Linux distribution, then launch RMfuse using the `--allow-other` flag. The mounted directory will be accessible via Windows explorer. For performance reasons you should choose a mount point under the WSL file system. Some issues have been observed when accessing large files. 
+RMfuse can be run on Windows via the Windows Subsystem for Linux (WSL).
+Currently only tested on Ubuntu 20.04 under WSL2. Follow the installation
+instructions above for your Linux distribution, then launch RMfuse using the
+`--allow-other` flag. The mounted directory will be accessible via Windows
+explorer. For performance reasons you should choose a mount point under the WSL
+file system. Some issues have been observed when accessing large files.
 
 ## Usage
 
