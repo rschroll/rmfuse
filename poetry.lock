@@ -394,7 +394,7 @@ pillow = ">=4.0.0"
 
 [[package]]
 name = "rmcl"
-version = "0.4.1"
+version = "0.4.2"
 description = "reMarkable Cloud Library"
 category = "main"
 optional = false
@@ -558,7 +558,7 @@ pyfuse3 = ["pyfuse3"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "ba9bf11085105a9fe0bb56c9130ddd1deade44c8559de561c5e0e6db072d78bf"
+content-hash = "af4bd67993040ff2ba62d7d58f46184a7918f0c56494df6d12ad01c8cbbcc61a"
 
 [metadata.files]
 anyio = [
@@ -860,8 +860,8 @@ reportlab = [
     {file = "reportlab-3.5.59.tar.gz", hash = "sha256:a755cca2dcf023130b03bb671670301a992157d5c3151d838c0b68ef89894536"},
 ]
 rmcl = [
-    {file = "rmcl-0.4.1-py3-none-any.whl", hash = "sha256:4dbfa65153a683ef15151d7be755abff05fc980b53304a744ae631128c192ced"},
-    {file = "rmcl-0.4.1.tar.gz", hash = "sha256:38fdc837d58a3576661d7c68d9fabfbe09579063842aca8d61996a56dd8f3b4e"},
+    {file = "rmcl-0.4.2-py3-none-any.whl", hash = "sha256:09534999cd233e5e8db531e51aab87eee7d72aa5a2592bcf100e2d015110cf52"},
+    {file = "rmcl-0.4.2.tar.gz", hash = "sha256:58de4758e7e3cb7acbf28fcfa80f4155252afdfb191beb4ba4aa36961f66cc67"},
 ]
 rmrl = [
     {file = "rmrl-0.2.1-py3-none-any.whl", hash = "sha256:c35b9f20494a6034a16e916d7351575efb3e3f77acabe9094453a7f6013eaa86"},
