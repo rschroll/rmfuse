@@ -528,9 +528,9 @@ def main():
     # From llfuse; causes problems with fuse3
     fuse_options.discard('nonempty')
     if options.verbose == 1:
-        logging.basicConfig(level=logging.DEBUG)
-    elif options.verbose > 1:
         logging.basicConfig(level=logging.INFO)
+    elif options.verbose > 1:
+        logging.basicConfig(level=logging.DEBUG)
         # Fuse debug is really verbose, so stick that here.
         fuse_options.add('debug')
 
@@ -547,14 +547,14 @@ def main():
     # Trigger getting the client, to prompt for one-time code, if needed
     get_client_s()
     fuse.init(fs, options.mountpoint, fuse_options)
-    log.debug(f'Mounting on {options.mountpoint}')
+    log.info(f'Mounting on {options.mountpoint}')
     try:
         if is_pyfuse3:
             trio.run(fuse.main)
         else:
             fuse.main(workers=1)
     except KeyboardInterrupt:
-        log.debug('Exiting due to KeyboardInterrupt')
+        log.info('Exiting due to KeyboardInterrupt')
     except Exception:
         return 1
     finally:
