@@ -216,7 +216,7 @@ class RmApiFS(fuse.Operations):
             elif isinstance(item, ModeFile):
                 entry.st_mode = (stat.S_IFREG | 0o644)
                 entry.st_size = await item.size()
-            stamp = int(item.mtime.timestamp() * 1e9)
+            stamp = max(int(item.mtime.timestamp() * 1e9), 0)
 
         entry.st_atime_ns = stamp
         entry.st_ctime_ns = stamp
