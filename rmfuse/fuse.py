@@ -500,8 +500,8 @@ def parse_args():
                         default=defaults['mode'], help="Type of files to mount")
     parser.add_argument('--write-config', action=WriteConfigAction, nargs=0,
                         help="Write a default configurations file")
-    parser.add_argument('--allow-other', dest='allow_other', action='store_const', const=True,
-                        default=False, help="Enable the allow_other FUSE flag")
+    parser.add_argument('--allow-other', dest='allow_other', action='store_true',
+                        help="Enable the allow_other FUSE flag")
     parser.add_argument('--version', action='version', version=VERSION)
     return parser.parse_args()
 
