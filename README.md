@@ -143,7 +143,7 @@ rmfuse ~/remarkable
 
 The first time RMfuse is run, it will need a _one-time code_ to get
 access to your reMarkable Cloud account.  You will be prompted to get
-that code from https://my.remarkable.com/connect/desktop, which may
+that code from https://my.remarkable.com/#desktop, which may
 require logging in to your reMarkable account.  RMfuse uses that code
 to obtain tokens which it uses in the future to authenticate itself.
 
