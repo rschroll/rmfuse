@@ -474,6 +474,9 @@ class RmApiFS(fuse.Operations):
         # See https://github.com/libfuse/sshfs/commit/db149d1d874ccf044f3ed8d8f980452506b8fb4b
         stats.f_bsize = stats.f_frsize = 4096
 
+        # Set an arbitrary maximum filename length, otherwise Nautilus cannot create directories
+        stats.f_namemax = 256
+
         # Number of blocks.  Some examples set to 0, others to large numbers.
         stats.f_blocks = stats.f_bfree = stats.f_bavail = 2**32 / stats.f_frsize
 
